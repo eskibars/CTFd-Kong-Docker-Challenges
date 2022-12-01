@@ -71,6 +71,33 @@
                         {% endif %}
                     </select>
                 </div>
+                <div class="form-group">
+                    <label for="kong-hostname-input">
+                        Kong Hostname/Admin Port
+                    </label>
+                    {% if config.kong_hostname %}
+                    <input class="form-control" type="text" name="kong_hostname" id="kong-hostname-input" placeholder="Ex: 127.0.0.1:8001" value='{{ config.kong_hostname }}'/>
+                    {% else %}
+                    <input class="form-control" type="text" name="kong_hostname" id="kong-hostname-input" placeholder="Ex: 127.0.0.1:8001" />
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <p>Kong TLS Enabled?</p>
+                    <input type="radio" name="kong_tls_enabled" id="kong-tls-radiobox-no" value="False" onclick="enable_file_form(!this.checked)" {% if not config.kong_tls_enabled %}checked{% endif %} />
+                    <label for="kong-tls-radiobox-no">No</label>
+                    <input type="radio" name="kong_tls_enabled" id="kong-tls-radiobox-yes" value="True" onclick="enable_file_form(this.checked)"{% if config.kong_tls_enabled %}checked{% endif %} />
+                    <label for="kong-tls-radiobox-yes">Yes</label>
+                </div>
+                <div class="form-group">
+                    <label for="kong-external-url-format-input">
+                        Kong External URL Format
+                    </label>
+                    {% if config.kong_external_url_format %}
+                    <input class="form-control" type="text" name="kong_external_url_format" id="kong-external-url-format-input" placeholder="Ex: https://{}.ctf.foo.bar" value='{{ config.kong_external_url_format }}'/>
+                    {% else %}
+                    <input class="form-control" type="text" name="kong_external_url_format" id="kong-external-url-format-input" placeholder="Ex: https://{}.ctf.foo.bar" />
+                    {% endif %}
+                </div>
                 {{ form.nonce() }}
                 <div class="col-md-13 text-center">
                     <button type="submit" tabindex="0" class="btn btn-md btn-primary btn-outlined">

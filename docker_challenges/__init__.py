@@ -15,6 +15,7 @@ from CTFd.utils.user import is_admin, authed
 from CTFd.utils.config import is_teams_mode
 from CTFd.api import CTFd_API_v1
 from CTFd.api.v1.scoreboard import ScoreboardDetail
+from urllib.parse import urlparse
 import CTFd.utils.scores
 from CTFd.api.v1.challenges import ChallengeList, Challenge
 from flask_restx import Namespace, Resource
@@ -24,6 +25,7 @@ from wtforms import (
     FileField,
     HiddenField,
     PasswordField,
+    IntegerField,
     RadioField,
     SelectField,
     StringField,
@@ -59,6 +61,9 @@ class DockerConfig(db.Model):
     client_cert = db.Column("client_cert", db.String(2000), index=True)
     client_key = db.Column("client_key", db.String(3300), index=True)
     repositories = db.Column("repositories", db.String(1024), index=True)
+    kong_hostname = db.Column("kong_hostname", db.String(64), index=True)
+    kong_tls_enabled = db.Column("kong_tls_enabled", db.Boolean, default=False, index=True)
+    kong_external_url_format = db.Column("kong_external_url_format", db.String(1024), index=True)
 
 
 class DockerChallengeTracker(db.Model):
@@ -86,6 +91,11 @@ class DockerConfigForm(BaseForm):
     client_cert = FileField('Client Cert')
     client_key = FileField('Client Key')
     repositories = SelectMultipleField('Repositories')
+    kong_hostname = StringField(
+        "Kong Hostname", description="The Hostname/IP of your Kong Gateway"
+    )
+    kong_tls_enabled = RadioField('Kong Admin TLS enabled?')
+    kong_external_url_format = StringField('The format of the external URL')
     submit = SubmitField('Submit')
 
 
@@ -136,6 +146,12 @@ def define_docker_admin(app):
             except:
                 print(traceback.print_exc())
                 b.repositories = None
+            if request.form['kong_tls_enabled'] == 'true':
+                b.kong_tls_enabled = True
+            else:
+                b.kong_tls_enabled = False
+            b.kong_hostname = request.form['kong_hostname']
+            b.kong_external_url_format = request.form['kong_external_url_format']
             db.session.add(b)
             db.session.commit()
             docker = DockerConfig.query.filter_by(id=1).first()
@@ -197,13 +213,21 @@ class KillContainerAPI(Resource):
         if full == "true":
             for c in docker_tracker:
                 delete_container(docker_config, c.instance_id)
+ 
+                for port in c.ports.split(','):
+                   remove_kong_route(docker_config, c.instance_id, port)
                 DockerChallengeTracker.query.filter_by(instance_id=c.instance_id).delete()
                 db.session.commit()
 
-        elif container != 'null' and container in [c.instance_id for c in docker_tracker]:
-            delete_container(docker_config, container)
-            DockerChallengeTracker.query.filter_by(instance_id=container).delete()
-            db.session.commit()
+        elif container != 'null':
+            for c in docker_tracker:
+                if c.instance_id == container:
+                  delete_container(docker_config, container)
+
+                  for port in c.ports.split(','):
+                     remove_kong_route(docker_config, c.instance_id, port)
+                  DockerChallengeTracker.query.filter_by(instance_id=container).delete()
+                  db.session.commit()
 
         else:
             return False
@@ -282,9 +306,56 @@ def get_unavailable_ports(docker):
 
 def get_required_ports(docker, image):
     r = do_request(docker, f'/images/{image}/json?all=1')
-    result = r.json()['ContainerConfig']['ExposedPorts'].keys()
+    try:
+      result = r.json()['ContainerConfig']['ExposedPorts'].keys()
+    except:
+      result = r.json()['Config']['ExposedPorts'].keys()
     return result
 
+def add_kong_route(docker, exposed_port, assigned_port, instance_id):
+    kong_host = docker.kong_hostname
+    kong_tls_enabled = docker.kong_tls_enabled
+    headers = { 'Content-type': 'application/json' }
+    if kong_tls_enabled:
+        kong_prefix = 'https'
+    else:
+        kong_prefix = 'http'
+    KONG_URL_TEMPLATE = '%s://%s' % (kong_prefix, kong_host)
+    
+    route_service_name = "%s-%s" % (instance_id[0:10], assigned_port.replace('/tcp',''))
+    data={'name':route_service_name,'protocol':'http','host':'127.0.0.1', 'port':int(str(assigned_port).replace('/tcp',''))}
+    r = requests.post(url="%s/services" % KONG_URL_TEMPLATE, data=json.dumps(data), headers=headers)
+    kong_docker_url = docker.kong_external_url_format.format(route_service_name)
+    p = urlparse(kong_docker_url)
+    data={'name':route_service_name}
+    if (p.scheme != ''):
+        data['protocols']=['http','https']
+    else:
+        data['protocols']=p.scheme.split('.')
+    if (p.hostname != ''):
+        data['hosts']=[p.hostname]
+    #if ((p.scheme == 'http' && p.port != 80) || p.scheme == 'https' && p.port != 443):
+    #    data['port'] = 
+    if (p.path != ''):
+        data['paths']=[p.path]
+    r = requests.post(url="%s/services/%s/routes" % (KONG_URL_TEMPLATE, route_service_name), data=json.dumps(data), headers=headers)
+    return kong_docker_url
+
+def remove_kong_route(docker, instance, assigned_port):
+    kong_host = docker.kong_hostname
+    kong_tls_enabled = docker.kong_tls_enabled
+    headers = { 'Content-type': 'application/json' }
+    if kong_tls_enabled:
+        kong_prefix = 'https'
+    else:
+        kong_prefix = 'http'
+    
+    KONG_URL_TEMPLATE = '%s://%s' % (kong_prefix, kong_host)
+    
+    # team always is 1 and port is still a string that includes /tcp
+    route_service_name = "%s-%s" % (instance[0:10], assigned_port.replace('/tcp',''))
+    r = requests.delete(url="%s/services/%s/routes/%s" % (KONG_URL_TEMPLATE, route_service_name, route_service_name))
+    r = requests.delete(url="%s/services/%s" % (KONG_URL_TEMPLATE, route_service_name))
 
 def create_container(docker, image, team, portbl):
     tls = docker.tls_enabled
@@ -316,24 +387,33 @@ def create_container(docker, image, team, portbl):
     team = hashlib.md5(team.encode("utf-8")).hexdigest()[:10]
     container_name = "%s_%s" % (image.split(':')[1], team)
     assigned_ports = dict()
+
+    external_routes = dict()
+
     for i in needed_ports:
         while True:
             assigned_port = random.choice(range(30000, 60000))
             if assigned_port not in portbl:
                 assigned_ports['%s/tcp' % assigned_port] = {}
+
                 break
     ports = dict()
     bindings = dict()
     tmp_ports = list(assigned_ports.keys())
+
     for i in needed_ports:
         ports[i] = {}
+
         bindings[i] = [{"HostPort": tmp_ports.pop()}]
+
     headers = {'Content-Type': "application/json"}
     data = json.dumps({"Image": image, "ExposedPorts": ports, "HostConfig": {"PortBindings": bindings}})
+    instance_id = ''
     if tls:
         r = requests.post(url="%s/containers/create?name=%s" % (URL_TEMPLATE, container_name), cert=CERT,
                       verify=False, data=data, headers=headers)
         result = r.json()
+        instance_id = result['Id']
         s = requests.post(url="%s/containers/%s/start" % (URL_TEMPLATE, result['Id']), cert=CERT, verify=False,
                           headers=headers)
     else:
@@ -341,9 +421,13 @@ def create_container(docker, image, team, portbl):
                           data=data, headers=headers)
         print(r.request.method, r.request.url, r.request.body)
         result = r.json()
+        instance_id = result['Id']
         print(result)
         # name conflicts are not handled properly
         s = requests.post(url="%s/containers/%s/start" % (URL_TEMPLATE, result['Id']), headers=headers)
+    for i in bindings.keys():
+        add_kong_route(docker, i, bindings[i][0]['HostPort'], instance_id)
+
     return result, data
 
 
@@ -493,6 +577,10 @@ class DockerChallengeType(BaseChallenge):
                 docker_containers = DockerChallengeTracker.query.filter_by(
                     docker_image=challenge.docker_image).filter_by(user_id=user.id).first()
             delete_container(docker, docker_containers.instance_id)
+
+            # TODO: test
+            for port in docker_containers.ports.split(','):
+                remove_kong_route(docker, docker_containers.instance_id, port)
             DockerChallengeTracker.query.filter_by(instance_id=docker_containers.instance_id).delete()
         except:
             pass
@@ -560,6 +648,9 @@ class ContainerAPI(Resource):
             for i in containers:
                 if int(session.id) == int(i.team_id) and (unix_time(datetime.utcnow()) - int(i.timestamp)) >= 7200:
                     delete_container(docker, i.instance_id)
+
+                    for port in i.ports.split(','):
+                       remove_kong_route(docker, i.instance_id, port)
                     DockerChallengeTracker.query.filter_by(instance_id=i.instance_id).delete()
                     db.session.commit()
             check = DockerChallengeTracker.query.filter_by(team_id=session.id).filter_by(docker_image=container).first()
@@ -568,8 +659,13 @@ class ContainerAPI(Resource):
             for i in containers:
                 if int(session.id) == int(i.user_id) and (unix_time(datetime.utcnow()) - int(i.timestamp)) >= 7200:
                     delete_container(docker, i.instance_id)
+
+                    for port in i.ports.split(','):
+                       remove_kong_route(docker, i.instance_id, port)
+
                     DockerChallengeTracker.query.filter_by(instance_id=i.instance_id).delete()
                     db.session.commit()
+
             check = DockerChallengeTracker.query.filter_by(user_id=session.id).filter_by(docker_image=container).first()
         # If this container is already created, we don't need another one.
         if check != None and not (unix_time(datetime.utcnow()) - int(check.timestamp)) >= 300:
@@ -577,6 +673,10 @@ class ContainerAPI(Resource):
         # The exception would be if we are reverting a box. So we'll delete it if it exists and has been around for more than 5 minutes.
         elif check != None:
             delete_container(docker, check.instance_id)
+            
+            for port in check.ports.split(','):
+                remove_kong_route(docker, check.instance_id, port)
+
             if is_teams_mode():
                 DockerChallengeTracker.query.filter_by(team_id=session.id).filter_by(docker_image=container).delete()
             else:
@@ -622,6 +722,11 @@ class DockerStatus(Resource):
             tracker = DockerChallengeTracker.query.filter_by(user_id=session.id)
         data = list()
         for i in tracker:
+            ports = i.ports.split(',')
+            kong_urls = []
+            for p in ports:
+                kong_urls.append(docker.kong_external_url_format.format("%s-%s" % (i.instance_id[0:10], p.replace('/tcp',''))))
+
             data.append({
                 'id': i.id,
                 'team_id': i.team_id,
@@ -630,8 +735,9 @@ class DockerStatus(Resource):
                 'timestamp': i.timestamp,
                 'revert_time': i.revert_time,
                 'instance_id': i.instance_id,
-                'ports': i.ports.split(','),
-                'host': str(docker.hostname).split(':')[0]
+                'ports': ports,
+                'host': str(docker.hostname).split(':')[0],
+                'urls': kong_urls
             })
         return {
             'success': True,
