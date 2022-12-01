@@ -47,7 +47,7 @@ function get_docker_status(container) {
                 var urls = String(item.urls).split(',');
                 var data = '';
                 $.each(urls, function(x, url) {
-                    data = data + 'URL: <a href="' + url + '">' + url + '</a><br />';
+                    data = data + 'URL: <a href="' + url + '" target="_new">' + url + '</a><br />';
                 })
                 $('#docker_container').html('<pre>Access URLs:<br />' + data + '<div class="mt-2" id="' + String(item.instance_id).substring(0,10) + '_revert_container"></div>');
                 var countDownDate = new Date(parseInt(item.revert_time) * 1000).getTime();
