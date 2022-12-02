@@ -79,7 +79,7 @@ function start_container(container) {
         .fail(function(jqxhr, settings, ex) {
             ezal({
                 title: "Attention!",
-                body: "You can only revert a container once per 5 minutes! Please be patient.",
+                body: "You can only revert or start a container once per 5 minutes! Please be patient.",
                 button: "Got it!"
             });
             $(get_docker_status(container));
