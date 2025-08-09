@@ -54,8 +54,8 @@ from pathlib import Path
 
 class DockerConfig(db.Model):
     """
-	Docker Config Model. This model stores the config for docker API connections.
-	"""
+    Docker Config Model. This model stores the config for docker API connections.
+    """
     id = db.Column(db.Integer, primary_key=True)
     hostname = db.Column("hostname", db.String(64), index=True)
     tls_enabled = db.Column("tls_enabled", db.Boolean, default=False, index=True)
@@ -70,8 +70,8 @@ class DockerConfig(db.Model):
 
 class DockerChallengeTracker(db.Model):
     """
-	Docker Container Tracker. This model stores the users/teams active docker containers.
-	"""
+    Docker Container Tracker. This model stores the users/teams active docker containers.
+    """
     id = db.Column(db.Integer, primary_key=True)
     team_id = db.Column("team_id", db.String(64), index=True)
     user_id = db.Column("user_id", db.String(64), index=True)
@@ -238,111 +238,111 @@ class KillContainerAPI(Resource):
 
 # For the Docker Config Page. Gets the Current Repositories available on the Docker Server.
 def get_repositories(docker, tags=False, repos=False):
-	tls = docker.tls_enabled
-	if not tls:
-		prefix = 'http'
-	else:
-		prefix = 'https'
-		try:
-			ca = docker.ca_cert
-			client = docker.client_cert
-			ckey = docker.client_key
-			ca_file = tempfile.NamedTemporaryFile(delete=False)
-			ca_file.write(ca)
-			ca_file.seek(0)
-			client_file = tempfile.NamedTemporaryFile(delete=False)
-			client_file.write(client)
-			client_file.seek(0)
-			key_file = tempfile.NamedTemporaryFile(delete=False)
-			key_file.write(ckey)
-			key_file.seek(0)
-			CERT = (client_file.name,key_file.name)
-		except:
-			return []
-	host = docker.hostname
-	URL_TEMPLATE = '%s://%s' % (prefix, host)
-	if tls:
-		try:
-			r = requests.get(url="%s/images/json?all=1" % URL_TEMPLATE, cert=CERT, verify=ca_file.name)
-		except:
-			return []
-	else:
-		try:
-			r = requests.get(url="%s/images/json?all=1" % URL_TEMPLATE)
-		except:
-			return []
-	result = list()
-	for i in r.json():
-		if not i['RepoTags'] == None:
-			if not i['RepoTags'][0].split(':')[0] == '<none>':
-				if repos:
-					if not i['RepoTags'][0].split(':')[0] in repos:
-						continue
-				if not tags:
-					result.append(i['RepoTags'][0].split(':')[0])
-				else:
-					result.append(i['RepoTags'][0])
-	return list(set(result))
+    tls = docker.tls_enabled
+    if not tls:
+        prefix = 'http'
+    else:
+        prefix = 'https'
+        try:
+            ca = docker.ca_cert
+            client = docker.client_cert
+            ckey = docker.client_key
+            ca_file = tempfile.NamedTemporaryFile(delete=False)
+            ca_file.write(ca)
+            ca_file.seek(0)
+            client_file = tempfile.NamedTemporaryFile(delete=False)
+            client_file.write(client)
+            client_file.seek(0)
+            key_file = tempfile.NamedTemporaryFile(delete=False)
+            key_file.write(ckey)
+            key_file.seek(0)
+            CERT = (client_file.name,key_file.name)
+        except:
+            return []
+    host = docker.hostname
+    URL_TEMPLATE = '%s://%s' % (prefix, host)
+    if tls:
+        try:
+            r = requests.get(url="%s/images/json?all=1" % URL_TEMPLATE, cert=CERT, verify=ca_file.name)
+        except:
+            return []
+    else:
+        try:
+            r = requests.get(url="%s/images/json?all=1" % URL_TEMPLATE)
+        except:
+            return []
+    result = list()
+    for i in r.json():
+        if not i['RepoTags'] == None:
+            if not i['RepoTags'][0].split(':')[0] == '<none>':
+                if repos:
+                    if not i['RepoTags'][0].split(':')[0] in repos:
+                        continue
+                if not tags:
+                    result.append(i['RepoTags'][0].split(':')[0])
+                else:
+                    result.append(i['RepoTags'][0])
+    return list(set(result))
 
 def get_unavailable_ports(docker):
-	tls = docker.tls_enabled
-	if not tls:
-		prefix = 'http'
-	else:
-		prefix = 'https'
-		try:
-			ca = docker.ca_cert
-			client = docker.client_cert
-			ckey = docker.client_key
-			ca_file = tempfile.NamedTemporaryFile(delete=False)
-			ca_file.write(ca)
-			ca_file.seek(0)
-			client_file = tempfile.NamedTemporaryFile(delete=False)
-			client_file.write(client)
-			client_file.seek(0)
-			key_file = tempfile.NamedTemporaryFile(delete=False)
-			key_file.write(ckey)
-			key_file.seek(0)
-			CERT = (client_file.name,key_file.name)
-		except:
-			return []
-	host = docker.hostname
-	URL_TEMPLATE = '%s://%s' % (prefix, host)
-	r = requests.get(url="%s/containers/json?all=1" % URL_TEMPLATE, cert=CERT, verify=ca_file.name)
-	result = list()
-	for i in r.json():
-		if not i['Ports'] == []:
-			for p in i['Ports']:
-				result.append(p['PublicPort'])
-	return result
+    tls = docker.tls_enabled
+    if not tls:
+        prefix = 'http'
+    else:
+        prefix = 'https'
+        try:
+            ca = docker.ca_cert
+            client = docker.client_cert
+            ckey = docker.client_key
+            ca_file = tempfile.NamedTemporaryFile(delete=False)
+            ca_file.write(ca)
+            ca_file.seek(0)
+            client_file = tempfile.NamedTemporaryFile(delete=False)
+            client_file.write(client)
+            client_file.seek(0)
+            key_file = tempfile.NamedTemporaryFile(delete=False)
+            key_file.write(ckey)
+            key_file.seek(0)
+            CERT = (client_file.name,key_file.name)
+        except:
+            return []
+    host = docker.hostname
+    URL_TEMPLATE = '%s://%s' % (prefix, host)
+    r = requests.get(url="%s/containers/json?all=1" % URL_TEMPLATE, cert=CERT, verify=ca_file.name)
+    result = list()
+    for i in r.json():
+        if not i['Ports'] == []:
+            for p in i['Ports']:
+                result.append(p['PublicPort'])
+    return result
 
 def get_required_ports(docker, image):
-	tls = docker.tls_enabled
-	if not tls:
-		prefix = 'http'
-	else:
-		prefix = 'https'
-		try:
-			ca = docker.ca_cert
-			client = docker.client_cert
-			ckey = docker.client_key
-			ca_file = tempfile.NamedTemporaryFile(delete=False)
-			ca_file.write(ca)
-			ca_file.seek(0)
-			client_file = tempfile.NamedTemporaryFile(delete=False)
-			client_file.write(client)
-			client_file.seek(0)
-			key_file = tempfile.NamedTemporaryFile(delete=False)
-			key_file.write(ckey)
-			key_file.seek(0)
-			CERT = (client_file.name,key_file.name)
-		except:
-			return []
-	host = docker.hostname
-	URL_TEMPLATE = '%s://%s' % (prefix, host)
-	r = requests.get(url="%s/images/%s/json?all=1" % (URL_TEMPLATE, image), cert=CERT, verify=ca_file.name)
-	result = r.json()['ContainerConfig']['ExposedPorts'].keys()
-	return result
+    tls = docker.tls_enabled
+    if not tls:
+        prefix = 'http'
+    else:
+        prefix = 'https'
+        try:
+            ca = docker.ca_cert
+            client = docker.client_cert
+            ckey = docker.client_key
+            ca_file = tempfile.NamedTemporaryFile(delete=False)
+            ca_file.write(ca)
+            ca_file.seek(0)
+            client_file = tempfile.NamedTemporaryFile(delete=False)
+            client_file.write(client)
+            client_file.seek(0)
+            key_file = tempfile.NamedTemporaryFile(delete=False)
+            key_file.write(ckey)
+            key_file.seek(0)
+            CERT = (client_file.name,key_file.name)
+        except:
+            return []
+    host = docker.hostname
+    URL_TEMPLATE = '%s://%s' % (prefix, host)
+    r = requests.get(url="%s/images/%s/json?all=1" % (URL_TEMPLATE, image), cert=CERT, verify=ca_file.name)
+    result = r.json()['ContainerConfig']['ExposedPorts'].keys()
+    return result
 
 
 def add_kong_route(docker, exposed_port, assigned_port, instance_id):
@@ -392,39 +392,39 @@ def remove_kong_route(docker, instance, assigned_port):
 
 def create_container(docker, image, team, portbl):
     tls = docker.tls_enabled
-	if not tls:
-		prefix = 'http'
-	else:
-		prefix = 'https'
-		try:
-			ca = docker.ca_cert
-			client = docker.client_cert
-			ckey = docker.client_key
-			ca_file = tempfile.NamedTemporaryFile(delete=False)
-			ca_file.write(ca)
-			ca_file.seek(0)
-			client_file = tempfile.NamedTemporaryFile(delete=False)
-			client_file.write(client)
-			client_file.seek(0)
-			key_file = tempfile.NamedTemporaryFile(delete=False)
-			key_file.write(ckey)
-			key_file.seek(0)
-			CERT = (client_file.name,key_file.name)
-		except:
-			return []
-	host = docker.hostname
-	URL_TEMPLATE = '%s://%s' % (prefix, host)
-	needed_ports = get_required_ports(docker, image)
-	team = hashlib.md5(team.encode("utf-8")).hexdigest()[:10]
-	container_name = "%s_%s" % (image.split(':')[1], team)
-	assigned_ports = dict()
+    if not tls:
+        prefix = 'http'
+    else:
+        prefix = 'https'
+        try:
+            ca = docker.ca_cert
+            client = docker.client_cert
+            ckey = docker.client_key
+            ca_file = tempfile.NamedTemporaryFile(delete=False)
+            ca_file.write(ca)
+            ca_file.seek(0)
+            client_file = tempfile.NamedTemporaryFile(delete=False)
+            client_file.write(client)
+            client_file.seek(0)
+            key_file = tempfile.NamedTemporaryFile(delete=False)
+            key_file.write(ckey)
+            key_file.seek(0)
+            CERT = (client_file.name,key_file.name)
+        except:
+            return []
+    host = docker.hostname
+    URL_TEMPLATE = '%s://%s' % (prefix, host)
+    needed_ports = get_required_ports(docker, image)
+    team = hashlib.md5(team.encode("utf-8")).hexdigest()[:10]
+    container_name = "%s_%s" % (image.split(':')[1], team)
+    assigned_ports = dict()
 
     for i in needed_ports:
-		while True:
-			assigned_port = random.choice(range(30000,60000))
-			if assigned_port not in portbl:
-				assigned_ports['%s/tcp' % assigned_port] = { }
-				break
+        while True:
+            assigned_port = random.choice(range(30000,60000))
+            if assigned_port not in portbl:
+                assigned_ports['%s/tcp' % assigned_port] = { }
+                break
     ports = dict()
     bindings = dict()
     tmp_ports = list(assigned_ports.keys())
@@ -447,32 +447,32 @@ def create_container(docker, image, team, portbl):
 
 
 def delete_container(docker, instance_id):
-	tls = docker.tls_enabled
-	if not tls:
-		prefix = 'http'
-	else:
-		prefix = 'https'
-		try:
-			ca = docker.ca_cert
-			client = docker.client_cert
-			ckey = docker.client_key
-			ca_file = tempfile.NamedTemporaryFile(delete=False)
-			ca_file.write(ca)
-			ca_file.seek(0)
-			client_file = tempfile.NamedTemporaryFile(delete=False)
-			client_file.write(client)
-			client_file.seek(0)
-			key_file = tempfile.NamedTemporaryFile(delete=False)
-			key_file.write(ckey)
-			key_file.seek(0)
-			CERT = (client_file.name,key_file.name)
-		except:
-			return []
-	host = docker.hostname
-	URL_TEMPLATE = '%s://%s' % (prefix, host)
-	headers = {'Content-Type': "application/json"}
-	r = requests.delete(url="%s/containers/%s?force=true" % (URL_TEMPLATE, instance_id), cert=CERT, verify=ca_file.name, headers=headers)
-	return True
+    tls = docker.tls_enabled
+    if not tls:
+        prefix = 'http'
+    else:
+        prefix = 'https'
+        try:
+            ca = docker.ca_cert
+            client = docker.client_cert
+            ckey = docker.client_key
+            ca_file = tempfile.NamedTemporaryFile(delete=False)
+            ca_file.write(ca)
+            ca_file.seek(0)
+            client_file = tempfile.NamedTemporaryFile(delete=False)
+            client_file.write(client)
+            client_file.seek(0)
+            key_file = tempfile.NamedTemporaryFile(delete=False)
+            key_file.write(ckey)
+            key_file.seek(0)
+            CERT = (client_file.name,key_file.name)
+        except:
+            return []
+    host = docker.hostname
+    URL_TEMPLATE = '%s://%s' % (prefix, host)
+    headers = {'Content-Type': "application/json"}
+    r = requests.delete(url="%s/containers/%s?force=true" % (URL_TEMPLATE, instance_id), cert=CERT, verify=ca_file.name, headers=headers)
+    return True
 
 
 class DockerChallengeType(BaseChallenge):
@@ -494,13 +494,13 @@ class DockerChallengeType(BaseChallenge):
     @staticmethod
     def update(challenge, request):
         """
-		This method is used to update the information associated with a challenge. This should be kept strictly to the
-		Challenges table and any child tables.
+        This method is used to update the information associated with a challenge. This should be kept strictly to the
+        Challenges table and any child tables.
 
-		:param challenge:
-		:param request:
-		:return:
-		"""
+        :param challenge:
+        :param request:
+        :return:
+        """
         data = request.form or request.get_json()
         for attr, value in data.items():
             setattr(challenge, attr, value)
@@ -511,12 +511,12 @@ class DockerChallengeType(BaseChallenge):
     @staticmethod
     def delete(challenge):
         """
-		This method is used to delete the resources used by a challenge.
-		NOTE: Will need to kill all containers here
+        This method is used to delete the resources used by a challenge.
+        NOTE: Will need to kill all containers here
 
-		:param challenge:
-		:return:
-		"""
+        :param challenge:
+        :return:
+        """
         Fails.query.filter_by(challenge_id=challenge.id).delete()
         Solves.query.filter_by(challenge_id=challenge.id).delete()
         Flags.query.filter_by(challenge_id=challenge.id).delete()
@@ -533,11 +533,11 @@ class DockerChallengeType(BaseChallenge):
     @staticmethod
     def read(challenge):
         """
-		This method is in used to access the data of a challenge in a format processable by the front end.
+        This method is in used to access the data of a challenge in a format processable by the front end.
 
-		:param challenge:
-		:return: Challenge object, data dictionary to be returned to the user
-		"""
+        :param challenge:
+        :return: Challenge object, data dictionary to be returned to the user
+        """
         challenge = DockerChallenge.query.filter_by(id=challenge.id).first()
         data = {
             'id': challenge.id,
@@ -561,11 +561,11 @@ class DockerChallengeType(BaseChallenge):
     @staticmethod
     def create(request):
         """
-		This method is used to process the challenge creation request.
+        This method is used to process the challenge creation request.
 
-		:param request:
-		:return:
-		"""
+        :param request:
+        :return:
+        """
         data = request.form or request.get_json()
         challenge = DockerChallenge(**data)
         db.session.add(challenge)
@@ -575,14 +575,14 @@ class DockerChallengeType(BaseChallenge):
     @staticmethod
     def attempt(challenge, request):
         """
-		This method is used to check whether a given input is right or wrong. It does not make any changes and should
-		return a boolean for correctness and a string to be shown to the user. It is also in charge of parsing the
-		user's input from the request itself.
+        This method is used to check whether a given input is right or wrong. It does not make any changes and should
+        return a boolean for correctness and a string to be shown to the user. It is also in charge of parsing the
+        user's input from the request itself.
 
-		:param challenge: The Challenge object from the database
-		:param request: The request the user submitted
-		:return: (boolean, string)
-		"""
+        :param challenge: The Challenge object from the database
+        :param request: The request the user submitted
+        :return: (boolean, string)
+        """
 
         data = request.form or request.get_json()
         print(request.get_json())
@@ -597,13 +597,13 @@ class DockerChallengeType(BaseChallenge):
     @staticmethod
     def solve(user, team, challenge, request):
         """
-		This method is used to insert Solves into the database in order to mark a challenge as solved.
+        This method is used to insert Solves into the database in order to mark a challenge as solved.
 
-		:param team: The Team object from the database
-		:param chal: The Challenge object from the database
-		:param request: The request the user submitted
-		:return:
-		"""
+        :param team: The Team object from the database
+        :param chal: The Challenge object from the database
+        :param request: The request the user submitted
+        :return:
+        """
         data = request.form or request.get_json()
         submission = data["submission"].strip()
         docker = DockerConfig.query.filter_by(id=1).first()
@@ -636,13 +636,13 @@ class DockerChallengeType(BaseChallenge):
     @staticmethod
     def fail(user, team, challenge, request):
         """
-		This method is used to insert Fails into the database in order to mark an answer incorrect.
+        This method is used to insert Fails into the database in order to mark an answer incorrect.
 
-		:param team: The Team object from the database
-		:param chal: The Challenge object from the database
-		:param request: The request the user submitted
-		:return:
-		"""
+        :param team: The Team object from the database
+        :param chal: The Challenge object from the database
+        :param request: The request the user submitted
+        :return:
+        """
         data = request.form or request.get_json()
         submission = data["submission"].strip()
         wrong = Fails(
@@ -669,68 +669,68 @@ container_namespace = Namespace("container", description='Endpoint to interact w
 
 @container_namespace.route("", methods=['POST', 'GET'])
 class ContainerAPI(Resource):
-	@authed_only
-	# I wish this was Post... Issues with API/CSRF and whatnot. Open to a Issue solving this.
-	def get(self):
-		container = request.args.get('name')
-		if not container:
-			return abort(403)
-		docker = DockerConfig.query.filter_by(id=1).first()
-		containers = DockerChallengeTracker.query.all()
-		if container not in get_repositories(docker, tags=True):
-			return abort(403)
-		if is_teams_mode():
-			session = get_current_team()
-			# First we'll delete all old docker containers (+2 hours)
-			for i in containers:
-				if int(session.id) == int(i.team_id) and (unix_time(datetime.utcnow()) - int(i.timestamp)) >= 7200:
-					delete_container(docker, i.instance_id)
+    @authed_only
+    # I wish this was Post... Issues with API/CSRF and whatnot. Open to a Issue solving this.
+    def get(self):
+        container = request.args.get('name')
+        if not container:
+            return abort(403)
+        docker = DockerConfig.query.filter_by(id=1).first()
+        containers = DockerChallengeTracker.query.all()
+        if container not in get_repositories(docker, tags=True):
+            return abort(403)
+        if is_teams_mode():
+            session = get_current_team()
+            # First we'll delete all old docker containers (+2 hours)
+            for i in containers:
+                if int(session.id) == int(i.team_id) and (unix_time(datetime.utcnow()) - int(i.timestamp)) >= 7200:
+                    delete_container(docker, i.instance_id)
 
                     for port in i.ports.split(','):
                        remove_kong_route(docker, i.instance_id, port)
-					DockerChallengeTracker.query.filter_by(instance_id=i.instance_id).delete()
-					db.session.commit()
-			check = DockerChallengeTracker.query.filter_by(team_id=session.id).filter_by(docker_image=container).first()
-		else:
-			session = get_current_user()
-			for i in containers:
-				if int(session.id) == int(i.user_id) and (unix_time(datetime.utcnow()) - int(i.timestamp)) >= 7200:
-					delete_container(docker, i.instance_id)
-					DockerChallengeTracker.query.filter_by(instance_id=i.instance_id).delete()
-					db.session.commit()
-			check = DockerChallengeTracker.query.filter_by(user_id=session.id).filter_by(docker_image=container).first()
-		# If this container is already created, we don't need another one.
-		if check != None and not (unix_time(datetime.utcnow()) - int(check.timestamp)) >= 300:
-			return abort(403)
-		# The exception would be if we are reverting a box. So we'll delete it if it exists and has been around for more than 5 minutes.
-		elif check != None:
-			delete_container(docker, check.instance_id)
+                    DockerChallengeTracker.query.filter_by(instance_id=i.instance_id).delete()
+                    db.session.commit()
+            check = DockerChallengeTracker.query.filter_by(team_id=session.id).filter_by(docker_image=container).first()
+        else:
+            session = get_current_user()
+            for i in containers:
+                if int(session.id) == int(i.user_id) and (unix_time(datetime.utcnow()) - int(i.timestamp)) >= 7200:
+                    delete_container(docker, i.instance_id)
+                    DockerChallengeTracker.query.filter_by(instance_id=i.instance_id).delete()
+                    db.session.commit()
+            check = DockerChallengeTracker.query.filter_by(user_id=session.id).filter_by(docker_image=container).first()
+        # If this container is already created, we don't need another one.
+        if check != None and not (unix_time(datetime.utcnow()) - int(check.timestamp)) >= 300:
+            return abort(403)
+        # The exception would be if we are reverting a box. So we'll delete it if it exists and has been around for more than 5 minutes.
+        elif check != None:
+            delete_container(docker, check.instance_id)
 
             for port in i.ports.split(','):
                        remove_kong_route(docker, i.instance_id, port)
 
-			if is_teams_mode():
-				DockerChallengeTracker.query.filter_by(team_id=session.id).filter_by(docker_image=container).delete()
-			else:
-				DockerChallengeTracker.query.filter_by(user_id=session.id).filter_by(docker_image=container).delete()
-			db.session.commit()
-		portsbl = get_unavailable_ports(docker)
-		create = create_container(docker,container,session.name,portsbl)
-		ports = json.loads(create[1])['HostConfig']['PortBindings'].values()
-		entry = DockerChallengeTracker(
-			team_id = session.id if is_teams_mode() else None,
-			user_id = session.id if not is_teams_mode() else None,
-			docker_image = container,
-			timestamp = unix_time(datetime.utcnow()),
-			revert_time = unix_time(datetime.utcnow()) + 300,
-			instance_id = create[0]['Id'],
-			ports = ','.join([p[0]['HostPort'] for p in ports]),
-			host = str(docker.hostname).split(':')[0]
-		)
-		db.session.add(entry)
-		db.session.commit()
-		db.session.close()
-		return
+            if is_teams_mode():
+                DockerChallengeTracker.query.filter_by(team_id=session.id).filter_by(docker_image=container).delete()
+            else:
+                DockerChallengeTracker.query.filter_by(user_id=session.id).filter_by(docker_image=container).delete()
+            db.session.commit()
+        portsbl = get_unavailable_ports(docker)
+        create = create_container(docker,container,session.name,portsbl)
+        ports = json.loads(create[1])['HostConfig']['PortBindings'].values()
+        entry = DockerChallengeTracker(
+            team_id = session.id if is_teams_mode() else None,
+            user_id = session.id if not is_teams_mode() else None,
+            docker_image = container,
+            timestamp = unix_time(datetime.utcnow()),
+            revert_time = unix_time(datetime.utcnow()) + 300,
+            instance_id = create[0]['Id'],
+            ports = ','.join([p[0]['HostPort'] for p in ports]),
+            host = str(docker.hostname).split(':')[0]
+        )
+        db.session.add(entry)
+        db.session.commit()
+        db.session.close()
+        return
 
 
 active_docker_namespace = Namespace("docker", description='Endpoint to retrieve User Docker Image Status')
@@ -739,9 +739,9 @@ active_docker_namespace = Namespace("docker", description='Endpoint to retrieve 
 @active_docker_namespace.route("", methods=['POST', 'GET'])
 class DockerStatus(Resource):
     """
-	The Purpose of this API is to retrieve a public JSON string of all docker containers
-	in use by the current team/user.
-	"""
+    The Purpose of this API is to retrieve a public JSON string of all docker containers
+    in use by the current team/user.
+    """
 
     @authed_only
     def get(self):
@@ -783,9 +783,9 @@ docker_namespace = Namespace("docker", description='Endpoint to retrieve dockers
 @docker_namespace.route("", methods=['POST', 'GET'])
 class DockerAPI(Resource):
     """
-	This is for creating Docker Challenges. The purpose of this API is to populate the Docker Image Select form
-	object in the Challenge Creation Screen.
-	"""
+    This is for creating Docker Challenges. The purpose of this API is to populate the Docker Image Select form
+    object in the Challenge Creation Screen.
+    """
 
     @admins_only
     def get(self):
