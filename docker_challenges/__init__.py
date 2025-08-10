@@ -173,6 +173,8 @@ def define_docker_admin(app):
         except:
             traceback.print_exc()
             selected_repos = []
+        if selected_repos == None:
+            selected_repos = []
         return render_template("docker_config.html", config=dconfig, form=form, repos=selected_repos)
 
     app.register_blueprint(admin_docker_config)
@@ -244,17 +246,17 @@ def get_repositories(docker, tags=False, repos=False):
     else:
         prefix = 'https'
         try:
-            ca = docker.ca_cert
-            client = docker.client_cert
-            ckey = docker.client_key
+            ca = bytes.fromhex(docker.ca_cert.replace("\\x","")).decode("ascii")
+            client = bytes.fromhex(docker.client_cert.replace("\\x","")).decode("ascii")
+            ckey = bytes.fromhex(docker.client_key.replace("\\x","")).decode("ascii")
             ca_file = tempfile.NamedTemporaryFile(delete=False)
-            ca_file.write(ca)
+            ca_file.write(ca.encode("ascii"))
             ca_file.seek(0)
             client_file = tempfile.NamedTemporaryFile(delete=False)
-            client_file.write(client)
+            client_file.write(client.encode("ascii"))
             client_file.seek(0)
             key_file = tempfile.NamedTemporaryFile(delete=False)
-            key_file.write(ckey)
+            key_file.write(ckey.encode("ascii"))
             key_file.seek(0)
             CERT = (client_file.name,key_file.name)
         except:
@@ -291,17 +293,17 @@ def get_unavailable_ports(docker):
     else:
         prefix = 'https'
         try:
-            ca = docker.ca_cert
-            client = docker.client_cert
-            ckey = docker.client_key
+            ca = bytes.fromhex(docker.ca_cert.replace("\\x","")).decode("ascii")
+            client = bytes.fromhex(docker.client_cert.replace("\\x","")).decode("ascii")
+            ckey = bytes.fromhex(docker.client_key.replace("\\x","")).decode("ascii")
             ca_file = tempfile.NamedTemporaryFile(delete=False)
-            ca_file.write(ca)
+            ca_file.write(ca.encode("ascii"))
             ca_file.seek(0)
             client_file = tempfile.NamedTemporaryFile(delete=False)
-            client_file.write(client)
+            client_file.write(client.encode("ascii"))
             client_file.seek(0)
             key_file = tempfile.NamedTemporaryFile(delete=False)
-            key_file.write(ckey)
+            key_file.write(ckey.encode("ascii"))
             key_file.seek(0)
             CERT = (client_file.name,key_file.name)
         except:
@@ -323,17 +325,17 @@ def get_required_ports(docker, image):
     else:
         prefix = 'https'
         try:
-            ca = docker.ca_cert
-            client = docker.client_cert
-            ckey = docker.client_key
+            ca = bytes.fromhex(docker.ca_cert.replace("\\x","")).decode("ascii")
+            client = bytes.fromhex(docker.client_cert.replace("\\x","")).decode("ascii")
+            ckey = bytes.fromhex(docker.client_key.replace("\\x","")).decode("ascii")
             ca_file = tempfile.NamedTemporaryFile(delete=False)
-            ca_file.write(ca)
+            ca_file.write(ca.encode("ascii"))
             ca_file.seek(0)
             client_file = tempfile.NamedTemporaryFile(delete=False)
-            client_file.write(client)
+            client_file.write(client.encode("ascii"))
             client_file.seek(0)
             key_file = tempfile.NamedTemporaryFile(delete=False)
-            key_file.write(ckey)
+            key_file.write(ckey.encode("ascii"))
             key_file.seek(0)
             CERT = (client_file.name,key_file.name)
         except:
@@ -397,17 +399,17 @@ def create_container(docker, image, team, portbl):
     else:
         prefix = 'https'
         try:
-            ca = docker.ca_cert
-            client = docker.client_cert
-            ckey = docker.client_key
+            ca = bytes.fromhex(docker.ca_cert.replace("\\x","")).decode("ascii")
+            client = bytes.fromhex(docker.client_cert.replace("\\x","")).decode("ascii")
+            ckey = bytes.fromhex(docker.client_key.replace("\\x","")).decode("ascii")
             ca_file = tempfile.NamedTemporaryFile(delete=False)
-            ca_file.write(ca)
+            ca_file.write(ca.encode("ascii"))
             ca_file.seek(0)
             client_file = tempfile.NamedTemporaryFile(delete=False)
-            client_file.write(client)
+            client_file.write(client.encode("ascii"))
             client_file.seek(0)
             key_file = tempfile.NamedTemporaryFile(delete=False)
-            key_file.write(ckey)
+            key_file.write(ckey.encode("ascii"))
             key_file.seek(0)
             CERT = (client_file.name,key_file.name)
         except:
@@ -453,17 +455,17 @@ def delete_container(docker, instance_id):
     else:
         prefix = 'https'
         try:
-            ca = docker.ca_cert
-            client = docker.client_cert
-            ckey = docker.client_key
+            ca = bytes.fromhex(docker.ca_cert.replace("\\x","")).decode("ascii")
+            client = bytes.fromhex(docker.client_cert.replace("\\x","")).decode("ascii")
+            ckey = bytes.fromhex(docker.client_key.replace("\\x","")).decode("ascii")
             ca_file = tempfile.NamedTemporaryFile(delete=False)
-            ca_file.write(ca)
+            ca_file.write(ca.encode("ascii"))
             ca_file.seek(0)
             client_file = tempfile.NamedTemporaryFile(delete=False)
-            client_file.write(client)
+            client_file.write(client.encode("ascii"))
             client_file.seek(0)
             key_file = tempfile.NamedTemporaryFile(delete=False)
-            key_file.write(ckey)
+            key_file.write(ckey.encode("ascii"))
             key_file.seek(0)
             CERT = (client_file.name,key_file.name)
         except:
