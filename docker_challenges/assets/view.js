@@ -31,13 +31,11 @@ function get_docker_status(container) {
         result.data.forEach(item => {
             if (item.docker_image == container) {
                 // Split the ports and create the data string
-                var ports = String(item.ports).split(',');
+                var urls = String(item.urls).split(',');
                 var data = '';
                 
-                ports.forEach(port => {
-                    port = String(port);
-                    data = data + 'Host: ' + item.host + ' Port: ' + port + '<br />';
-                    /*data = data + 'URL: <a href="' + url + '" target="_new">' + url + '</a><br />';*/
+                urls.forEach(url => {
+                    data = data + 'URL: <a href="' + url + '" target="_new">' + url + '</a><br />';
                 });
                 // Update the DOM with the docker container information
                 CTFd.lib.$('#docker_container').html('<pre>Access URLs:<br />' + data + 
