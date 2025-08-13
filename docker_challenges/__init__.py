@@ -625,7 +625,7 @@ class DockerChallengeType(BaseChallenge):
         except:
             pass
         solve = Solves(
-            user_id=user.id,
+            user_id=str(user.id),
             team_id=team.id if team else None,
             challenge_id=challenge.id,
             ip=get_ip(req=request),
@@ -648,8 +648,8 @@ class DockerChallengeType(BaseChallenge):
         data = request.form or request.get_json()
         submission = data["submission"].strip()
         wrong = Fails(
-            user_id=user.id,
-            team_id=team.id if team else None,
+            user_id=str(user.id),
+            team_id=str(team.id) if team else None,
             challenge_id=challenge.id,
             ip=get_ip(request),
             provided=submission,
@@ -692,7 +692,7 @@ class ContainerAPI(Resource):
                        remove_kong_route(docker, i.instance_id, port)
                     DockerChallengeTracker.query.filter_by(instance_id=i.instance_id).delete()
                     db.session.commit()
-            check = DockerChallengeTracker.query.filter_by(team_id=session.id).filter_by(docker_image=container).first()
+            check = DockerChallengeTracker.query.filter_by(team_id=str(session.id)).filter_by(docker_image=container).first()
         else:
             session = get_current_user()
             for i in containers:
@@ -700,7 +700,7 @@ class ContainerAPI(Resource):
                     delete_container(docker, i.instance_id)
                     DockerChallengeTracker.query.filter_by(instance_id=i.instance_id).delete()
                     db.session.commit()
-            check = DockerChallengeTracker.query.filter_by(user_id=session.id).filter_by(docker_image=container).first()
+            check = DockerChallengeTracker.query.filter_by(user_id=str(session.id)).filter_by(docker_image=container).first()
         # If this container is already created, we don't need another one.
         if check != None and not (unix_time(datetime.utcnow()) - int(check.timestamp)) >= 300:
             return abort(403)
