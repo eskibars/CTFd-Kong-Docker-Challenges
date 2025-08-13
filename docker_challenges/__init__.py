@@ -73,8 +73,8 @@ class DockerChallengeTracker(db.Model):
     Docker Container Tracker. This model stores the users/teams active docker containers.
     """
     id = db.Column(db.Integer, primary_key=True)
-    team_id = db.Column("team_id", db.Integer, index=True)
-    user_id = db.Column("user_id", db.Integer, index=True)
+    team_id = db.Column("team_id", db.String(64), index=True)
+    user_id = db.Column("user_id", db.String(64), index=True)
     docker_image = db.Column("docker_image", db.String(64), index=True)
     timestamp = db.Column("timestamp", db.Integer, index=True)
     revert_time = db.Column("revert_time", db.Integer, index=True)
