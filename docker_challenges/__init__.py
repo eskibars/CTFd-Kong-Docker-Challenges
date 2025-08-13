@@ -612,10 +612,10 @@ class DockerChallengeType(BaseChallenge):
         try:
             if is_teams_mode():
                 docker_containers = DockerChallengeTracker.query.filter_by(
-                    docker_image=challenge.docker_image).filter_by(team_id=team.id).first()
+                    docker_image=challenge.docker_image).filter_by(team_id=str(team.id)).first()
             else:
                 docker_containers = DockerChallengeTracker.query.filter_by(
-                    docker_image=challenge.docker_image).filter_by(user_id=user.id).first()
+                    docker_image=challenge.docker_image).filter_by(user_id=str(user.id)).first()
             delete_container(docker, docker_containers.instance_id)
 
             # TODO: test
@@ -712,16 +712,16 @@ class ContainerAPI(Resource):
                        remove_kong_route(docker, i.instance_id, port)
 
             if is_teams_mode():
-                DockerChallengeTracker.query.filter_by(team_id=session.id).filter_by(docker_image=container).delete()
+                DockerChallengeTracker.query.filter_by(team_id=str(session.id)).filter_by(docker_image=container).delete()
             else:
-                DockerChallengeTracker.query.filter_by(user_id=session.id).filter_by(docker_image=container).delete()
+                DockerChallengeTracker.query.filter_by(user_id=str(session.id)).filter_by(docker_image=container).delete()
             db.session.commit()
         portsbl = get_unavailable_ports(docker)
         create = create_container(docker,container,session.name,portsbl)
         ports = json.loads(create[1])['HostConfig']['PortBindings'].values()
         entry = DockerChallengeTracker(
-            team_id = session.id if is_teams_mode() else None,
-            user_id = session.id if not is_teams_mode() else None,
+            team_id = str(session.id) if is_teams_mode() else None,
+            user_id = str(session.id) if not is_teams_mode() else None,
             docker_image = container,
             timestamp = unix_time(datetime.utcnow()),
             revert_time = unix_time(datetime.utcnow()) + 300,
@@ -750,10 +750,10 @@ class DockerStatus(Resource):
         docker = DockerConfig.query.filter_by(id=1).first()
         if is_teams_mode():
             session = get_current_team()
-            tracker = DockerChallengeTracker.query.filter_by(team_id=session.id)
+            tracker = DockerChallengeTracker.query.filter_by(team_id=str(session.id))
         else:
             session = get_current_user()
-            tracker = DockerChallengeTracker.query.filter_by(user_id=session.id)
+            tracker = DockerChallengeTracker.query.filter_by(user_id=str(session.id))
         data = list()
         for i in tracker:
             ports = i.ports.split(',')
@@ -763,8 +763,8 @@ class DockerStatus(Resource):
 
             data.append({
                 'id': i.id,
-                'team_id': i.team_id,
-                'user_id': i.user_id,
+                'team_id': str(i.team_id),
+                'user_id': str(i.user_id),
                 'docker_image': i.docker_image,
                 'timestamp': i.timestamp,
                 'revert_time': i.revert_time,
